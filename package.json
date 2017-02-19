@@ -1,0 +1,20 @@
+{
+  "name": "serverless-slackbot",
+  "description": "Serverless Slackbot",
+  "version": "1.0.0",
+  "author": "John Agan <johnagan@gmail.com>",
+  "scripts": {
+    "test": "mocha",
+    "deploy": "serverless deploy"
+  },
+  "dependencies": {
+    "axios": "^0.15.3",
+    "debug": "^2.6.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-as-promised": "^6.0.0",
+    "aws-sdk": "^2.9.0",
+    "mocha": "^3.2.0"
+  }
+}

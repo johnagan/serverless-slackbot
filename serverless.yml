@@ -1,0 +1,114 @@
+service: serverless-slackbot
+
+custom:
+  # debugging output
+  debug: '*'
+
+
+  services:
+    # The dynamodb table to store OAuth access data
+    table_name: slackbot-brain
+
+    # sns dispatch topic name
+    topic_name: dispatcher
+
+
+  nav:
+    # The path used to post Slack events to
+    event_path: callback
+
+    # The path used to install the Slack App
+    install_path: install
+
+    # The path to redirect to after an install
+    install_redirect: https://slack.com
+
+
+  slack:
+    # Verification token
+    verification_token: "xxxxxxxxxxxxxxx"
+    
+    # Space delimited scopes
+    client_scopes: "bot commands"
+    
+    # Client ID - quotes required
+    client_id: "xxxxxxxxxxxxxxxxxx"
+    
+    # Client Secret - quotes required
+    client_secret: "xxxxxxxxxxxxxxxxxx"
+
+
+provider:
+  name: aws
+  runtime: nodejs4.3
+  profile: serverless
+  versionFunctions: false
+  iamRoleStatements:    
+    - Effect: Allow
+      Resource: "*"
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - sns:*
+        
+functions:
+  callbacks:
+    handler: src/index.handler
+    environment:
+      DEBUG: ${self:custom.debug}
+      TABLE_NAME: ${self:custom.services.table_name}
+      TOPIC_NAME: ${self:custom.services.topic_name}
+      CLIENT_ID: ${self:custom.slack.client_id}
+      CLIENT_SECRET: ${self:custom.slack.client_secret}
+      CLIENT_SCOPES: ${self:custom.slack.client_scopes}
+      INSTALL_REDIRECT: ${self:custom.nav.install_redirect}
+      VERIFICATION_TOKEN: ${self:custom.slack.verification_token}
+    events:
+      - sns: ${self:custom.services.topic_name}
+      - http:
+          path: ${self:custom.nav.event_path}
+          method: post
+          integration: lambda
+          response:
+            template: $input.path('$')
+      - http:
+          path: ${self:custom.nav.install_path}
+          method: get
+          integration: lambda
+          request:
+            parameters:
+              querystrings:
+                code: true
+                state: true
+          response:
+            statusCodes:
+              201:
+                pattern: ''
+              301:
+                pattern: http.*
+                headers:
+                  Location: integration.response.body.errorMessage
+                  Cache-Control: "'no-cache, no-store, must-revalidate'"
+
+resources:
+  Resources:
+    dynamodb:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: team_id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: team_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.services.table_name}
