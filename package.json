@@ -1,6 +1,6 @@
 {
   "name": "serverless-slackbot",
-  "description": "Serverless Slackbot",
+  "description": "A boilerplate Serverless Slackbot framework with a custom scripts folder (like Hubot)",
   "version": "1.0.0",
   "author": "John Agan <johnagan@gmail.com>",
   "scripts": {
