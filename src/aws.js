@@ -20,7 +20,10 @@ exports.getId = function() {
 
   let authorized = data => data.User.Arn
   let unauthorized = error => error.message
-  let match = arn => arn.match(/arn:aws:sts::(\d+):/)[1]
+  let match = arn => {
+    return arn.match(/arn:aws:iam::(\d+):/) ?
+      arn.match(/arn:aws:iam::(\d+):/)[1] : arn.match(/arn:aws:sts::(\d+):/)[1]
+  }
 
   return iam.getUser({}).promise().then(authorized).catch(unauthorized).then(match)
 }
